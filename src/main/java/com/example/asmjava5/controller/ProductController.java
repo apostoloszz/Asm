@@ -6,7 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 
 @Controller
 @RequestMapping("/product")
@@ -29,26 +33,50 @@ public class ProductController {
     }
 
     @PostMapping("/add")
-    public String add(@ModelAttribute Product product) {
-        productService.save(product);
+    public String add(@ModelAttribute Product product, @RequestParam("image") MultipartFile image) {
+        if (!image.isEmpty()) {
+            product.setImageUrl(image.getOriginalFilename());
+            productService.save(product);
+            try {
+                byte[] bytes = image.getBytes();
+                BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(new File("src/main/resources/static/images/" + image.getOriginalFilename())));
+                stream.write(bytes);
+                stream.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         return "redirect:/product";
     }
 
     @GetMapping("/edit/{id}")
-    public String edit(@PathVariable Long id, Model model) {
+    public String edit(@PathVariable Integer id, Model model) {
         model.addAttribute("product", productService.findById(id));
         model.addAttribute("categories", productService.findAllCategories());
         return "product/product-edit";
     }
 
     @PostMapping("/edit/{id}")
-    public String edit(@PathVariable Long id, @ModelAttribute Product product) {
-        productService.save(product);
+    public String edit(@PathVariable Long id, @ModelAttribute("product") Product product, @RequestParam("image") MultipartFile image) {
+        if (!image.isEmpty()) {
+            product.setImageUrl(image.getOriginalFilename());
+            productService.save(product);
+            try {
+                byte[] bytes = image.getBytes();
+                BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(new File("src/main/resources/static/images/" + image.getOriginalFilename())));
+                stream.write(bytes);
+                stream.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            productService.save(product);
+        }
         return "redirect:/product";
     }
 
     @GetMapping("/delete/{id}")
-    public String delete(@PathVariable Long id) {
+    public String delete(@PathVariable Integer id) {
         productService.delete(id);
         return "redirect:/product";
     }
